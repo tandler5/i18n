@@ -157,3 +157,9 @@ declare module '@nuxt/schema' {
   interface NuxtHooks extends ModuleHooks {}
   interface PublicRuntimeConfig extends ModulePublicRuntimeConfig {}
 }
+declare module 'nitropack/types' {
+  interface NitroRuntimeHooks {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    'i18n:getDefaultLocaleForDomainFromBackend': any
+  }
+}

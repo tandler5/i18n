@@ -1,6 +1,6 @@
 import { stringify } from 'devalue'
 import { defineI18nMiddleware } from '@intlify/h3'
-import { defineNitroPlugin, useStorage } from 'nitropack/runtime'
+import { defineNitroPlugin, useRuntimeConfig, useStorage } from 'nitropack/runtime'
 import { tryUseI18nContext, createI18nContext } from './context'
 import { createUserLocaleDetector } from './utils/locale-detector'
 import { pickNested } from './utils/messages-utils'
@@ -13,11 +13,12 @@ import { localeDetector } from '#internal/i18n-locale-detector.mjs'
 import { resolveRootRedirect, useI18nDetection, useRuntimeI18n } from '../shared/utils'
 import { isFunction } from '@intlify/shared'
 
-import { getRequestURL, sendRedirect, type H3Event, setCookie } from 'h3'
+import { getRequestURL, sendRedirect, type H3Event, setCookie, type EventHandlerRequest } from 'h3'
 import type { CoreOptions } from '@intlify/core'
 import { useDetectors } from '../shared/detection'
 import { domainFromLocale } from '../shared/domain'
 import { isExistingNuxtRoute, matchLocalized } from '../shared/matching'
+import type { LocaleObject } from '#build/i18n-options.mjs'
 
 const getHost = (event: H3Event) => getRequestURL(event, { xForwardedHost: true }).host
 
@@ -143,7 +144,23 @@ export default defineNitroPlugin(async nitro => {
 
   const baseUrlGetter = createBaseUrlGetter()
   nitro.hooks.hook('request', async (event: H3Event) => {
-    const options = await setupVueI18nOptions(getDefaultLocaleForDomain(getHost(event)) || _defaultLocale)
+    const host = getHost(event)
+
+    const defaultLocaleForDomainFromBackend = (await nitro.hooks.callHook(
+      'i18n:getDefaultLocaleForDomainFromBackend',
+      host
+    )) as LocaleObject[] | undefined
+
+    if (defaultLocaleForDomainFromBackend) {
+      const config = useRuntimeConfig(event)
+      config.public.i18n.locales?.splice(0, config.public.i18n.locales.length, ...defaultLocaleForDomainFromBackend)
+    }
+
+    const options = await setupVueI18nOptions(
+      defaultLocaleForDomainFromBackend?.find(l => !!l.defaultForDomains?.includes(host))?.code ||
+        getDefaultLocaleForDomain(host) ||
+        _defaultLocale
+    )
     const url = getRequestURL(event)
     const ctx = createI18nContext()
     event.context.nuxtI18n = ctx

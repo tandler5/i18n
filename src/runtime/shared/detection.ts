@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { getRequestURL, getRequestHeader } from 'h3'
-import { normalizedLocales } from '#build/i18n-options.mjs'
 import { getLocaleFromRoute, getLocaleFromRoutePath } from '#i18n-kit/routing'
 import { findBrowserLocale } from '#i18n-kit/browser'
 import { parseAcceptLanguage } from '@intlify/utils'
@@ -11,7 +10,8 @@ import { parse } from 'cookie-es'
 
 import type { H3Event } from 'h3'
 import type { CompatRoute } from '../types'
-import type { NuxtApp } from '#app'
+import { useRuntimeConfig, type NuxtApp } from '#app'
+import type { LocaleObject } from '#build/i18n-options.mjs'
 
 // TODO: add unit tests for these detectors
 
@@ -24,11 +24,16 @@ const getRouteLocale = (event: H3Event | undefined, route: string | CompatRoute)
   getLocaleFromRoute(route)
 
 const getHeaderLocale = (event: H3Event | undefined) => {
-  return findBrowserLocale(normalizedLocales, parseAcceptLanguage(getRequestHeader(event!, 'accept-language') || ''))
+  const config = useRuntimeConfig(event)
+  return findBrowserLocale(
+    config.public.i18n.locales as LocaleObject[],
+    parseAcceptLanguage(getRequestHeader(event!, 'accept-language') || '')
+  )
 }
 
 const getNavigatorLocale = (event: H3Event | undefined) => {
-  return findBrowserLocale(normalizedLocales, navigator.languages)
+  const config = useRuntimeConfig(event)
+  return findBrowserLocale(config.public.i18n.locales as LocaleObject[], navigator.languages)
 }
 
 const getHostLocale = (
@@ -40,7 +45,8 @@ const getHostLocale = (
     ? new URL(window.location.href).host
     : getRequestURL(event!, { xForwardedHost: true }).host
 
-  const locales = normalizedLocales.map(l => ({
+  const config = useRuntimeConfig(event)
+  const locales = (config.public.i18n.locales as LocaleObject[])?.map(l => ({
     ...l,
     domain: domainLocales[l.code]?.domain ?? l.domain
   }))

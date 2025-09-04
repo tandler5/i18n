@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { createI18n } from 'vue-i18n'
-import { defineNuxtPlugin, prerenderRoutes, useNuxtApp, useRequestEvent, useRequestURL } from '#imports'
-import { localeCodes, normalizedLocales } from '#build/i18n-options.mjs'
+import { defineNuxtPlugin, prerenderRoutes, useNuxtApp, useRequestEvent, useRequestURL, useRuntimeConfig } from '#app'
+import { localeCodes, type LocaleObject } from '#build/i18n-options.mjs'
 import { loadAndSetLocale, navigate } from '../utils'
 import { extendI18n } from '../routing/i18n'
 import { getI18nTarget } from '../compatibility'
@@ -71,8 +71,13 @@ export default defineNuxtPlugin({
         }
 
         composer.strategy = __I18N_STRATEGY__
+
+        const nuxt = useNuxtApp()
+        const config = useRuntimeConfig(nuxt.ssrContext?.event)
+        const locales = config.public.i18n.locales as LocaleObject[]
+
         composer.localeProperties = computed(
-          () => normalizedLocales.find(l => l.code === composer.locale.value) || { code: composer.locale.value }
+          () => locales?.find(l => l.code === composer.locale.value) || { code: composer.locale.value }
         )
         composer.setLocale = async (locale: string) => {
           await loadAndSetLocale(nuxt, locale)

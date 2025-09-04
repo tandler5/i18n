@@ -1,4 +1,5 @@
-import { localeCodes, localeLoaders, normalizedLocales } from '#build/i18n-options.mjs'
+import { useNuxtApp, useRuntimeConfig } from '#app'
+import { localeCodes, localeLoaders, type LocaleObject } from '#build/i18n-options.mjs'
 import { isArray, isString } from '@intlify/shared'
 import type { FallbackLocale } from 'vue-i18n'
 
@@ -54,7 +55,9 @@ export function isLocaleWithFallbacksCacheable(locale: string, fallbackLocales: 
  * Returns default locale for the current domain, returns `defaultLocale` by default
  */
 export function getDefaultLocaleForDomain(host: string): string | undefined {
-  return normalizedLocales.find(l => !!l.defaultForDomains?.includes(host))?.code
+  const nuxt = useNuxtApp()
+  const config = useRuntimeConfig(nuxt.ssrContext?.event)
+  return (config.public.i18n.locales as LocaleObject[]).find(l => !!l.defaultForDomains?.includes(host))?.code
 }
 
 export const isSupportedLocale = (locale?: string): boolean => localeCodes.includes(locale || '')
