@@ -1,6 +1,5 @@
 .DS_Store
 .idea
-*.tgz
 
 .yarn/*
 !.yarn/releases
@@ -18,6 +17,7 @@
 .output
 .eslintcache
 
+dist
 temp
 coverage
 node_modules
